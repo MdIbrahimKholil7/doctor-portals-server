@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express()
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 
@@ -114,6 +114,15 @@ const run = async () => {
             res.send(result)
             console.log(result)
         })
+
+        // delete doctor 
+        app.delete('/delete-doctor/:id',verifyJwt,verifyAdmin,async(req,res)=>{
+            const id=req.params.id
+            const query={_id:ObjectId(id)}
+            const result=await doctorCollection.deleteOne(query)
+            res.send(result)
+        })
+
         // booked service api
         app.post('/book', async (req, res) => {
             const query = req.body
