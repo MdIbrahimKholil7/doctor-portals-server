@@ -38,7 +38,7 @@ const emailOptions = {
         api_key: process.env.EMAIL_SENDER_KEY
     }
 }
-var emailClient = nodemailer.createTransport(sgTransport(emailOptions));
+const emailClient = nodemailer.createTransport(sgTransport(emailOptions));
 // send nodemailer 
 const sendNodeMailer = (query) => {
     const { email, treatmentName, patientName, slot, date } = query
@@ -52,6 +52,33 @@ const sendNodeMailer = (query) => {
         <p>Hello ${patientName}</p>
         <p>Your appointment for ${treatmentName} is confirmed</p>
 
+        <h3>Our Address</h3>
+        <p>Dhaka</p>
+        <p>12/Mirpur</p>
+        </div>
+        `
+    };
+    emailClient.sendMail(emailSend, function (err, info) {
+        if (err) {
+            console.log(err);
+        }
+        else {
+            console.log('Message sent: ', info);
+        }
+    });
+}
+const sendPayment = (query) => {
+    const { email, treatmentName, patientName, slot, date,price } = query
+    var emailSend = {
+        from: process.env.EMAIL_SENDER,
+        to: email,
+        subject: `Your appointment for ${treatmentName} is on ${date} at ${slot} is confirmed`,
+        text: 'Your appointment is confirmed',
+        html: `
+        <div>
+        <p>Hello ${patientName}</p>
+        <p>Your appointment for ${treatmentName} is confirmed</p>
+        <>You pay for this service ${price}</>
         <h3>Our Address</h3>
         <p>Dhaka</p>
         <p>12/Mirpur</p>
@@ -151,7 +178,7 @@ const run = async () => {
 
         // post payment api 
         app.post("/create-payment-intent", verifyJwt, async (req, res) => {
-            const { price } = req.body
+            const { price,data } = req.body
             // console.log('from body',req.body)
             const amount = price * 100
             // console.log("from type of", typeof price)
@@ -166,6 +193,8 @@ const run = async () => {
             res.send({
                 clientSecret: paymentIntent.client_secret,
             });
+            sendPayment(data)
+
         })
 
         // update user collection 
