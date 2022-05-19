@@ -79,7 +79,7 @@ const sendPayment = (query) => {
         <div>
         <p>Hello ${patientName}</p>
         <p>Your appointment for ${treatmentName} is confirmed</p>
-        <>You pay for this service ${price}</>
+        <>You pay for this service ${'$'+price}</>
         <h3>Our Address</h3>
         <p>Dhaka</p>
         <p>12/Mirpur</p>
