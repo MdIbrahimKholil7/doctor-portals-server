@@ -130,7 +130,7 @@ const run = async () => {
             console.log(query)
             const filter = { patientName: query.patientName, treatmentName: query.treatmentName, email: query.email }
             const exist = await bookingCollection.findOne(filter)
-
+            
             if (exist) {
                 return res.send({ success: false, result: exist })
             }
