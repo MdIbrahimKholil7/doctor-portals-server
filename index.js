@@ -128,7 +128,7 @@ const run = async () => {
         app.post('/book', async (req, res) => {
             const query = req.body
             console.log(query)
-            const filter = { patientName: query.patientName, treatmentName: query.treatmentName, email: query.email }
+            const filter = { patientName: query.patientName, treatmentName: query.treatmentName, email: query.email,date:query.date }
             const exist = await bookingCollection.findOne(filter)
             
             if (exist) {
@@ -152,9 +152,9 @@ const run = async () => {
         // post payment api 
         app.post("/create-payment-intent", verifyJwt, async (req, res) => {
             const { price } = req.body
-            console.log('from body',req.body)
+            // console.log('from body',req.body)
             const amount = price * 100
-            console.log("from type of", typeof price)
+            // console.log("from type of", typeof price)
             const paymentIntent = await stripe.paymentIntents.create({
                 amount,
                 currency: 'usd',
