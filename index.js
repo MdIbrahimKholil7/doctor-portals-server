@@ -181,7 +181,7 @@ const run = async () => {
                     transactionId:body.transactionId,
                 }
             }
-            const result=await userCollection.updateOne(filter,updateDoc,options)
+            const result=await bookingCollection.updateOne(filter,updateDoc,options)
             const payment=await paymentCollection.insertOne(body)
             console.log(result)
         })
