@@ -67,6 +67,7 @@ const sendNodeMailer = (query) => {
         }
     });
 }
+
 const sendPayment = (query) => {
     const { email, treatmentName, patientName, slot, date,price } = query
     var emailSend = {
@@ -190,11 +191,11 @@ const run = async () => {
                 ],
 
             })
+            sendPayment(data)
+            console.log('payment success')
             res.send({
                 clientSecret: paymentIntent.client_secret,
             });
-            sendPayment(data)
-
         })
 
         // update user collection 
