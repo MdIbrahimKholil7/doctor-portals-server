@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 
 const port = process.env.PORT || 5000
 require('dotenv').config()
-
+const stripe = require('stripe')(`${process.env.TEST_API_KEY}`);
 const nodemailer = require('nodemailer');
 const sgTransport = require('nodemailer-sendgrid-transport');
 // middleware 
@@ -35,13 +35,13 @@ const verifyJwt = (req, res, next) => {
 
 const emailOptions = {
     auth: {
-      api_key:process.env.EMAIL_SENDER_KEY
+        api_key: process.env.EMAIL_SENDER_KEY
     }
-  }
-  var emailClient = nodemailer.createTransport(sgTransport(emailOptions));
+}
+var emailClient = nodemailer.createTransport(sgTransport(emailOptions));
 // send nodemailer 
 const sendNodeMailer = (query) => {
-    const {email,treatmentName,patientName,slot,date}=query
+    const { email, treatmentName, patientName, slot, date } = query
     var emailSend = {
         from: process.env.EMAIL_SENDER,
         to: email,
@@ -57,13 +57,13 @@ const sendNodeMailer = (query) => {
         <p>12/Mirpur</p>
         </div>
         `
-      };
-      emailClient.sendMail(emailSend, function(err, info){
-        if (err ){
-          console.log(err);
+    };
+    emailClient.sendMail(emailSend, function (err, info) {
+        if (err) {
+            console.log(err);
         }
         else {
-          console.log('Message sent: ', info);
+            console.log('Message sent: ', info);
         }
     });
 }
@@ -76,6 +76,7 @@ const run = async () => {
         const bookingCollection = client.db('doctorPortals').collection('book')
         const userCollection = client.db('doctorPortals').collection('users')
         const doctorCollection = client.db('doctorPortals').collection('doctors')
+        const paymentCollection = client.db('doctorPortals').collection('payment')
 
         const verifyAdmin = async (req, res, next) => {
             const request = req.decoded.email
@@ -116,27 +117,73 @@ const run = async () => {
         })
 
         // delete doctor 
-        app.delete('/delete-doctor/:id',verifyJwt,verifyAdmin,async(req,res)=>{
-            const id=req.params.id
-            const query={_id:ObjectId(id)}
-            const result=await doctorCollection.deleteOne(query)
+        app.delete('/delete-doctor/:id', verifyJwt, verifyAdmin, async (req, res) => {
+            const id = req.params.id
+            const query = { _id: ObjectId(id) }
+            const result = await doctorCollection.deleteOne(query)
             res.send(result)
         })
 
         // booked service api
         app.post('/book', async (req, res) => {
             const query = req.body
+            console.log(query)
             const filter = { patientName: query.patientName, treatmentName: query.treatmentName, email: query.email }
             const exist = await bookingCollection.findOne(filter)
+
             if (exist) {
                 return res.send({ success: false, result: exist })
             }
-            console.log('email sent')
-            console.log(query)
             sendNodeMailer(query)
             const result = await bookingCollection.insertOne(query)
             res.send({ success: true, result: result })
 
+        })
+
+        // payment api 
+        app.get('/payment/:id', async (req, res) => {
+            const id = req.params.id
+            const filter = { _id: ObjectId(id) }
+            const result = await bookingCollection.findOne(filter)
+            res.send(result)
+
+        })
+
+        // post payment api 
+        app.post("/create-payment-intent", verifyJwt, async (req, res) => {
+            const { price } = req.body
+            console.log('from body',req.body)
+            const amount = price * 100
+            console.log("from type of", typeof price)
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount,
+                currency: 'usd',
+                payment_method_types: [
+                    "card"
+                ],
+
+            })
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+        })
+
+        // update user collection 
+        app.patch('/update-user/:id',async(req,res)=>{
+            const body=req.body
+            const id=req.params.id
+            console.log(id)
+            const filter={_id:ObjectId(id)}
+            const options = { upsert: true };
+            const updateDoc={
+                $set:{
+                    paid:true,
+                    transactionId:body.transactionId,
+                }
+            }
+            const result=await userCollection.updateOne(filter,updateDoc,options)
+            const payment=await paymentCollection.insertOne(body)
+            console.log(result)
         })
 
         // available slots 
